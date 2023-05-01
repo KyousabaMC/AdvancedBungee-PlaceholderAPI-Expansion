@@ -1,0 +1,95 @@
+package io.github.tanguygab.advancedbungeeexpansion.spigot;
+
+import io.github.tanguygab.advancedbungeeexpansion.ServerInfo;
+import me.clip.placeholderapi.expansion.PlaceholderExpansion;
+import me.clip.placeholderapi.expansion.Taskable;
+import net.md_5.bungee.api.ChatColor;
+import org.bukkit.Bukkit;
+import org.bukkit.OfflinePlayer;
+import org.bukkit.event.HandlerList;
+
+import java.util.*;
+import java.util.stream.Collectors;
+
+
+public class AdvancedBungeeExpansion extends PlaceholderExpansion implements Taskable {
+
+    protected final String CHANNEL = "advancedbungee:channel";
+    protected final Map<String, ServerInfo> servers = new HashMap<>();
+    protected ServerInfo currentServer;
+    protected boolean loaded;
+
+    @Override
+    public String getIdentifier() {
+        return "advancedbungee";
+    }
+    @Override
+    public  String getAuthor() {
+        return "Tanguygab";
+    }
+
+    @Override
+    public String getVersion() {
+        return "1.0.0";
+    }
+
+    @Override
+    public boolean canRegister() {
+        return Bukkit.getServer().spigot().getConfig().getBoolean("settings.bungeecord",false);
+    }
+
+    @Override
+    public void start() {
+        loaded = false;
+        Bukkit.getServer().getMessenger().registerIncomingPluginChannel(getPlaceholderAPI(), CHANNEL,new SpigotListener(this));
+    }
+
+    @Override
+    public void stop() {
+        loaded = false;
+        Bukkit.getServer().getMessenger().unregisterIncomingPluginChannel(getPlaceholderAPI(), CHANNEL);
+        servers.clear();
+    }
+
+    @Override
+    public String onRequest(OfflinePlayer player, String params) {
+        if (!loaded) return "Loading data...";
+
+        String[] args = params.split("_");
+        String[] serverArgs = args[0].split(":");
+        String category = serverArgs[0];
+        String serverName = serverArgs.length > 1 ? serverArgs[1] : null;
+        String result = args.length > 1 ? args[1] : "name";
+
+        return switch (category) {
+            case "servers" -> switch (result) {
+                case "name" -> String.join(", ", servers.keySet());
+                case "count" -> servers.size()+"";
+                case "playercount" -> {
+                    int i = 0;
+                    for (ServerInfo server : servers.values()) i+=server.getPlayerCount();
+                    yield i+"";
+                }
+                case "players" -> {
+                    List<String> players = new ArrayList<>();
+                    servers.values().forEach(server->players.addAll(server.getPlayers()));
+                    yield String.join(", ",players);
+                }
+                default -> null;
+            };
+            case "current" -> getServerInfo(currentServer,result);
+            case "server" -> getServerInfo(servers.get(serverName),result);
+            default -> null;
+        };
+    }
+
+    private String getServerInfo(ServerInfo server, String result) {
+        if (server == null) return "Unknown server";
+        return switch (result) {
+            case "playercount" -> server.getPlayerCount()+"";
+            case "players" -> String.join(", ",server.getPlayers());
+            case "status" -> ChatColor.COLOR_CHAR + (server.getStatus() ? "aOnline" : "cOffline");
+            default -> server.getName();
+        };
+    }
+}
