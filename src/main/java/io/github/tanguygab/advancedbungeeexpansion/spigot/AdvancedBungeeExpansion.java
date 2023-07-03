@@ -6,10 +6,9 @@ import me.clip.placeholderapi.expansion.Taskable;
 import net.md_5.bungee.api.ChatColor;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
-import org.bukkit.event.HandlerList;
 
+import javax.annotation.Nonnull;
 import java.util.*;
-import java.util.stream.Collectors;
 
 
 public class AdvancedBungeeExpansion extends PlaceholderExpansion implements Taskable {
@@ -20,16 +19,16 @@ public class AdvancedBungeeExpansion extends PlaceholderExpansion implements Tas
     protected boolean loaded;
 
     @Override
-    public String getIdentifier() {
+    public @Nonnull String getIdentifier() {
         return "advancedbungee";
     }
     @Override
-    public  String getAuthor() {
+    public @Nonnull String getAuthor() {
         return "Tanguygab";
     }
 
     @Override
-    public String getVersion() {
+    public @Nonnull String getVersion() {
         return "1.0.0";
     }
 
@@ -52,7 +51,7 @@ public class AdvancedBungeeExpansion extends PlaceholderExpansion implements Tas
     }
 
     @Override
-    public String onRequest(OfflinePlayer player, String params) {
+    public String onRequest(OfflinePlayer player, @Nonnull String params) {
         if (!loaded) return "Loading data...";
 
         String[] args = params.split("_");
@@ -64,11 +63,11 @@ public class AdvancedBungeeExpansion extends PlaceholderExpansion implements Tas
         return switch (category) {
             case "servers" -> switch (result) {
                 case "name" -> String.join(", ", servers.keySet());
-                case "count" -> servers.size()+"";
+                case "count" -> String.valueOf(servers.size());
                 case "playercount" -> {
                     int i = 0;
                     for (ServerInfo server : servers.values()) i+=server.getPlayerCount();
-                    yield i+"";
+                    yield String.valueOf(i);
                 }
                 case "players" -> {
                     List<String> players = new ArrayList<>();
@@ -86,7 +85,7 @@ public class AdvancedBungeeExpansion extends PlaceholderExpansion implements Tas
     private String getServerInfo(ServerInfo server, String result) {
         if (server == null) return "Unknown server";
         return switch (result) {
-            case "playercount" -> server.getPlayerCount()+"";
+            case "playercount" -> String.valueOf(server.getPlayerCount());
             case "players" -> String.join(", ",server.getPlayers());
             case "status" -> ChatColor.COLOR_CHAR + (server.getStatus() ? "aOnline" : "cOffline");
             default -> server.getName();

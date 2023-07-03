@@ -6,6 +6,7 @@ import io.github.tanguygab.advancedbungeeexpansion.ServerInfo;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.messaging.PluginMessageListener;
 
+import javax.annotation.Nonnull;
 import java.util.List;
 
 public class SpigotListener implements PluginMessageListener {
@@ -17,7 +18,8 @@ public class SpigotListener implements PluginMessageListener {
     }
 
     @Override
-    public void onPluginMessageReceived(String channel, Player player, byte[] message) {
+    @SuppressWarnings("UnstableApiUsage")
+    public void onPluginMessageReceived(@Nonnull String channel, @Nonnull Player player, @Nonnull byte[] message) {
         if (!expansion.CHANNEL.equals(channel)) return;
         ByteArrayDataInput in = ByteStreams.newDataInput(message);
         String subChannel = in.readUTF();
