@@ -23,7 +23,7 @@ public class AdvancedBungeeExpansionBridge extends Plugin {
             ServerInfo serverInfo = new ServerInfo(server,playersGetNames(info.getPlayers()));
             info.ping((result, error) -> {
                 serverInfo.setStatus(error == null);
-                serverInfo.setMotd(result.getDescriptionComponent().toPlainText());
+                if (error != null) serverInfo.setMotd(result.getDescriptionComponent().toPlainText());
             });
             servers.put(server,serverInfo);
         });
@@ -36,7 +36,7 @@ public class AdvancedBungeeExpansionBridge extends Plugin {
                     if (!servers.containsKey(server)) servers.put(server,new ServerInfo(server,playersGetNames(info.getPlayers())));
                     info.ping((result, error) -> {
                         updateStatus(server,error == null);
-                        updateMotd(server,result.getDescriptionComponent().toPlainText());
+                        if (error != null) updateMotd(server,result.getDescriptionComponent().toPlainText());
                     });
                 }),
                 0,10, TimeUnit.SECONDS);
