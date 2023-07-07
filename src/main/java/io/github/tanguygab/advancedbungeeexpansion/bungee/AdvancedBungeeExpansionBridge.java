@@ -21,7 +21,10 @@ public class AdvancedBungeeExpansionBridge extends Plugin {
     public void onEnable() {
         getProxy().getServers().forEach((server,info)->{
             ServerInfo serverInfo = new ServerInfo(server,playersGetNames(info.getPlayers()));
-            info.ping((result, error) -> serverInfo.setStatus(error == null));
+            info.ping((result, error) -> {
+                serverInfo.setStatus(error == null);
+                serverInfo.setMotd(result.getDescriptionComponent().toPlainText());
+            });
             servers.put(server,serverInfo);
         });
         getProxy().registerChannel(CHANNEL);
@@ -29,7 +32,13 @@ public class AdvancedBungeeExpansionBridge extends Plugin {
 
         getProxy().getPluginManager().registerListener(this,listener = new BungeeListener(this));
         getProxy().getScheduler().schedule(this,()->
-                getProxy().getServers().forEach((server, info)->info.ping((result, error) -> updateStatus(server,error == null))),
+                getProxy().getServers().forEach((server, info)->{
+                    if (!servers.containsKey(server)) servers.put(server,new ServerInfo(server,playersGetNames(info.getPlayers())));
+                    info.ping((result, error) -> {
+                        updateStatus(server,error == null);
+                        updateMotd(server,result.getDescriptionComponent().toPlainText());
+                    });
+                }),
                 0,10, TimeUnit.SECONDS);
     }
 
@@ -53,7 +62,7 @@ public class AdvancedBungeeExpansionBridge extends Plugin {
         ByteArrayDataOutput out = ByteStreams.newDataOutput();
         out.writeUTF("Load");
         out.writeUTF(server.getName());
-        servers.forEach((target,info)->out.writeUTF(target+"|"+info.getStatus()+"|"+String.join(",",info.getPlayers())));
+        servers.forEach((target,info)->out.writeUTF(target+"|"+info.isStatus()+"|"+info.getMotd()+"|"+String.join(",",info.getPlayers())));
         out.writeUTF("End");
         boolean loaded = server.sendData(CHANNEL,out.toByteArray(),false);
         if (loaded) loadedServers.add(server.getName());
@@ -74,20 +83,30 @@ public class AdvancedBungeeExpansionBridge extends Plugin {
         getProxy().getServers().forEach((target,info0)->info0.sendData(CHANNEL,out.toByteArray()));
     }
     private void updateStatus(String server, boolean status) {
-        ServerInfo info = servers.get(server);
-
         if (status) loadServer(getProxy().getServerInfo(server));
         else loadedServers.remove(server);
 
-        if (info.getStatus() == status) return;
+        ServerInfo info = servers.get(server);
+        if (info.isStatus() == status) return;
         info.setStatus(status);
-
 
         ByteArrayDataOutput out = ByteStreams.newDataOutput();
         out.writeUTF("Status");
         out.writeUTF(server);
         out.writeBoolean(status);
         getProxy().getServers().forEach((target,info0)->info0.sendData(CHANNEL,out.toByteArray()));
+    }
+    private void updateMotd(String server, String motd) {
+        ServerInfo info = servers.get(server);
+        if (info == null || info.getMotd().equals(motd)) return;
+        info.setMotd(motd);
+
+        ByteArrayDataOutput out = ByteStreams.newDataOutput();
+        out.writeUTF("MOTD");
+        out.writeUTF(server);
+        out.writeUTF(motd);
+        getProxy().getServers().forEach((target,info0)->info0.sendData(CHANNEL,out.toByteArray()));
+
     }
 
 }

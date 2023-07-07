@@ -1,6 +1,8 @@
 package io.github.tanguygab.advancedbungeeexpansion.spigot;
 
 import io.github.tanguygab.advancedbungeeexpansion.ServerInfo;
+import lombok.Getter;
+import lombok.experimental.Accessors;
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
 import me.clip.placeholderapi.expansion.Taskable;
 import net.md_5.bungee.api.ChatColor;
@@ -17,25 +19,11 @@ public class AdvancedBungeeExpansion extends PlaceholderExpansion implements Tas
     protected final Map<String, ServerInfo> servers = new HashMap<>();
     protected ServerInfo currentServer;
     protected boolean loaded;
+    @Getter private final String identifier = "advancedbungee";
+    @Getter private final String author = "Tanguygab";
+    @Getter private final String version = "1.0.2";
 
-    @Override
-    public @Nonnull String getIdentifier() {
-        return "advancedbungee";
-    }
-    @Override
-    public @Nonnull String getAuthor() {
-        return "Tanguygab";
-    }
-
-    @Override
-    public @Nonnull String getVersion() {
-        return "1.0.1";
-    }
-
-    @Override
-    public boolean canRegister() {
-        return Bukkit.getServer().spigot().getConfig().getBoolean("settings.bungeecord",false);
-    }
+    @Getter @Accessors(fluent = true) private final boolean canRegister = Bukkit.getServer().spigot().getConfig().getBoolean("settings.bungeecord",false);
 
     @Override
     public void start() {
@@ -87,7 +75,8 @@ public class AdvancedBungeeExpansion extends PlaceholderExpansion implements Tas
         return switch (result) {
             case "playercount" -> String.valueOf(server.getPlayerCount());
             case "players" -> String.join(", ",server.getPlayers());
-            case "status" -> ChatColor.COLOR_CHAR + (server.getStatus() ? "aOnline" : "cOffline");
+            case "status" -> ChatColor.COLOR_CHAR + (server.isStatus() ? "aOnline" : "cOffline");
+            case "motd" -> server.getMotd();
             default -> server.getName();
         };
     }

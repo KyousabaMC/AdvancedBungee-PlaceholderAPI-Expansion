@@ -1,40 +1,21 @@
 package io.github.tanguygab.advancedbungeeexpansion;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.Setter;
+
 import java.util.List;
 
+@AllArgsConstructor
 public class ServerInfo {
 
-    private final String name;
-    private boolean status;
-    private List<String> players;
+    @Getter private final String name;
+    @Getter @Setter private boolean status;
+    @Getter @Setter private String motd;
+    @Getter @Setter private List<String> players;
 
     public ServerInfo(String name, List<String> players) {
-        this(name,false,players);
-    }
-    public ServerInfo(String name, boolean status, List<String> players) {
-        this.name = name;
-        this.status = status;
-        this.players = players;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public boolean getStatus() {
-        return status;
-    }
-
-    public void setStatus(boolean status) {
-        this.status = status;
-    }
-
-    public List<String> getPlayers() {
-        return players;
-    }
-
-    public void setPlayers(List<String> players) {
-        this.players = players;
+        this(name,false,"No MOTD",players);
     }
 
     public int getPlayerCount() {

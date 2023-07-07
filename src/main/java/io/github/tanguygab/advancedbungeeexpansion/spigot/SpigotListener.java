@@ -9,13 +9,7 @@ import org.bukkit.plugin.messaging.PluginMessageListener;
 import javax.annotation.Nonnull;
 import java.util.List;
 
-public class SpigotListener implements PluginMessageListener {
-
-    private final AdvancedBungeeExpansion expansion;
-
-    public SpigotListener(AdvancedBungeeExpansion expansion) {
-        this.expansion = expansion;
-    }
+public record SpigotListener(AdvancedBungeeExpansion expansion) implements PluginMessageListener {
 
     @Override
     @SuppressWarnings("UnstableApiUsage")
@@ -32,8 +26,9 @@ public class SpigotListener implements PluginMessageListener {
                     String[] args = line.split("\\|");
                     String server = args[0];
                     boolean status = Boolean.parseBoolean(args[1]);
-                    List<String> players = args.length > 2 ? List.of(args[2].split(",")) : List.of();
-                    expansion.servers.put(server,new ServerInfo(server,status,players));
+                    String motd = args[2];
+                    List<String> players = args.length > 3 ? List.of(args[3].split(",")) : List.of();
+                    expansion.servers.put(server,new ServerInfo(server,status,motd,players));
                 }
                 expansion.currentServer = expansion.servers.get(currentServer);
                 expansion.loaded = true;
@@ -46,8 +41,11 @@ public class SpigotListener implements PluginMessageListener {
             }
             case "Status" -> {
                 ServerInfo info = expansion.servers.get(in.readUTF());
-                if (info == null) return;
-                info.setStatus(in.readBoolean());
+                if (info != null) info.setStatus(in.readBoolean());
+            }
+            case "MOTD" -> {
+                ServerInfo info = expansion.servers.get(in.readUTF());
+                if (info != null) info.setMotd(in.readUTF());
             }
         }
 
