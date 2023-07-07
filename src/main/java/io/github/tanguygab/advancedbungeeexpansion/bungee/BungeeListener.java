@@ -5,13 +5,7 @@ import net.md_5.bungee.api.event.ServerSwitchEvent;
 import net.md_5.bungee.api.plugin.Listener;
 import net.md_5.bungee.event.EventHandler;
 
-public class BungeeListener implements Listener {
-
-    private final AdvancedBungeeExpansionBridge plugin;
-
-    public BungeeListener(AdvancedBungeeExpansionBridge plugin) {
-        this.plugin = plugin;
-    }
+public record BungeeListener(AdvancedBungeeExpansionBridge plugin) implements Listener {
 
     @EventHandler
     public void on(ServerSwitchEvent e) {
