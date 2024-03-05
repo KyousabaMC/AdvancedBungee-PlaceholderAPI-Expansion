@@ -75,7 +75,7 @@ public class AdvancedBungeeExpansion extends PlaceholderExpansion implements Tas
         return switch (result) {
             case "playercount" -> String.valueOf(server.getPlayerCount());
             case "players" -> String.join(", ",server.getPlayers());
-            case "status" -> ChatColor.COLOR_CHAR + (server.isStatus() ? "aOnline" : "cOffline");
+            case "status" -> ChatColor.COLOR_CHAR + (server.isStatus() ? "aオンライン" : "cオフライン");
             case "motd" -> server.getMotd();
             default -> server.getName();
         };
