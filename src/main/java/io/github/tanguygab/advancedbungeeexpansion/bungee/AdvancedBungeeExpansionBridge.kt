@@ -1,112 +1,137 @@
-package io.github.tanguygab.advancedbungeeexpansion.bungee;
+package io.github.tanguygab.advancedbungeeexpansion.bungee
 
-import com.google.common.io.ByteArrayDataOutput;
-import com.google.common.io.ByteStreams;
-import io.github.tanguygab.advancedbungeeexpansion.ServerInfo;
-import net.md_5.bungee.api.connection.ProxiedPlayer;
-import net.md_5.bungee.api.plugin.Plugin;
+import com.google.common.io.ByteStreams
+import io.github.tanguygab.advancedbungeeexpansion.ServerInfo
+import net.md_5.bungee.api.ServerPing
+import net.md_5.bungee.api.connection.ProxiedPlayer
+import net.md_5.bungee.api.plugin.Plugin
+import java.util.concurrent.TimeUnit
 
-import java.util.*;
-import java.util.concurrent.TimeUnit;
+class AdvancedBungeeExpansionBridge : Plugin() {
+    protected val CHANNEL: String = "advancedbungeejp:channel"
+    private val loadedServers: MutableList<String> = ArrayList()
+    private val servers: MutableMap<String, ServerInfo> = HashMap()
+    private var listener: BungeeListener? = null
 
-@SuppressWarnings("UnstableApiUsage")
-public class AdvancedBungeeExpansionBridge extends Plugin {
+    override fun onEnable() {
+        proxy.servers.forEach { (server: String, info: net.md_5.bungee.api.config.ServerInfo) ->
+            val serverInfo = ServerInfo(server, playersGetNames(info.players))
+            info.ping() { result: ServerPing, error: Throwable? ->
+                serverInfo.status = (error == null)
+                if (error != null) serverInfo.motd = result.descriptionComponent.toPlainText()
+            }
+            servers[server] = serverInfo
+        }
+        proxy.registerChannel(CHANNEL)
+        proxy.servers.forEach { (server: String?, info: net.md_5.bungee.api.config.ServerInfo) -> loadServer(info) }
 
-    protected final String CHANNEL = "advancedbungee:channel";
-    private final List<String> loadedServers = new ArrayList<>();
-    private final Map<String, ServerInfo> servers = new HashMap<>();
-    private BungeeListener listener;
-
-    @Override
-    public void onEnable() {
-        getProxy().getServers().forEach((server,info)->{
-            ServerInfo serverInfo = new ServerInfo(server,playersGetNames(info.getPlayers()));
-            info.ping((result, error) -> {
-                serverInfo.setStatus(error == null);
-                if (error != null) serverInfo.setMotd(result.getDescriptionComponent().toPlainText());
-            });
-            servers.put(server,serverInfo);
-        });
-        getProxy().registerChannel(CHANNEL);
-        getProxy().getServers().forEach((server,info)->loadServer(info));
-
-        getProxy().getPluginManager().registerListener(this,listener = new BungeeListener(this));
-        getProxy().getScheduler().schedule(this,()->
-                getProxy().getServers().forEach((server, info)->{
-                    if (!servers.containsKey(server)) servers.put(server,new ServerInfo(server,playersGetNames(info.getPlayers())));
-                    info.ping((result, error) -> {
-                        updateStatus(server,error == null);
-                        if (error != null) updateMotd(server,result.getDescriptionComponent().toPlainText());
-                    });
-                }),
-                0,10, TimeUnit.SECONDS);
+        proxy.pluginManager.registerListener(this, BungeeListener(this).also { listener = it })
+        proxy.scheduler.schedule(
+            this, {
+                proxy.servers.forEach { (server: String, info: net.md_5.bungee.api.config.ServerInfo) ->
+                    if (!servers.containsKey(server)) servers[server] =
+                        ServerInfo(server, playersGetNames(info.players))
+                    info.ping { result: ServerPing, error: Throwable? ->
+                        updateStatus(server, error == null)
+                        if (error != null) updateMotd(server, result.descriptionComponent.toPlainText())
+                    }
+                }
+            },
+            0, 10, TimeUnit.SECONDS
+        )
     }
 
-    @Override
-    public void onDisable() {
-        ByteArrayDataOutput out = ByteStreams.newDataOutput();
-        out.writeUTF("Unload");
-        getProxy().getServers().forEach((server,info)-> info.sendData(CHANNEL, out.toByteArray()));
-        getProxy().unregisterChannel(CHANNEL);
-        getProxy().getPluginManager().unregisterListener(listener);
-        getProxy().getScheduler().cancel(this);
-        servers.clear();
-        loadedServers.clear();
+    override fun onDisable() {
+        val out = ByteStreams.newDataOutput()
+        out.writeUTF("Unload")
+        proxy.servers.forEach { (server: String?, info: net.md_5.bungee.api.config.ServerInfo) ->
+            info.sendData(
+                CHANNEL,
+                out.toByteArray()
+            )
+        }
+        proxy.unregisterChannel(CHANNEL)
+        proxy.pluginManager.unregisterListener(listener)
+        proxy.scheduler.cancel(this)
+        servers.clear()
+        loadedServers.clear()
     }
 
-    private List<String> playersGetNames(Collection<ProxiedPlayer> collection) {
-        return collection.stream().map(ProxiedPlayer::getName).toList();
+    private fun playersGetNames(collection: Collection<ProxiedPlayer>): List<String> {
+        return collection.stream().map { obj: ProxiedPlayer -> obj.name }.toList()
     }
 
-    protected void loadServer(net.md_5.bungee.api.config.ServerInfo server) {
-        ByteArrayDataOutput out = ByteStreams.newDataOutput();
-        out.writeUTF("Load");
-        out.writeUTF(server.getName());
-        servers.forEach((target,info)->out.writeUTF(target+"|"+info.isStatus()+"|"+info.getMotd()+"|"+String.join(",",info.getPlayers())));
-        out.writeUTF("End");
-        boolean loaded = server.sendData(CHANNEL,out.toByteArray(),false);
-        if (loaded) loadedServers.add(server.getName());
-    }
-    protected void updatePlayers(net.md_5.bungee.api.config.ServerInfo server) {
-        if (server == null) return;
-
-        if (server.getPlayers().size() != 0 && !loadedServers.contains(server.getName()))
-            updateStatus(server.getName(),true);
-
-        ServerInfo info = servers.get(server.getName());
-        info.setPlayers(playersGetNames(server.getPlayers()));
-
-        ByteArrayDataOutput out = ByteStreams.newDataOutput();
-        out.writeUTF("Players");
-        out.writeUTF(info.getName());
-        out.writeUTF(String.join(",",info.getPlayers()));
-        getProxy().getServers().forEach((target,info0)->info0.sendData(CHANNEL,out.toByteArray()));
-    }
-    private void updateStatus(String server, boolean status) {
-        if (status) loadServer(getProxy().getServerInfo(server));
-        else loadedServers.remove(server);
-
-        ServerInfo info = servers.get(server);
-        if (info.isStatus() == status) return;
-        info.setStatus(status);
-
-        ByteArrayDataOutput out = ByteStreams.newDataOutput();
-        out.writeUTF("Status");
-        out.writeUTF(server);
-        out.writeBoolean(status);
-        getProxy().getServers().forEach((target,info0)->info0.sendData(CHANNEL,out.toByteArray()));
-    }
-    private void updateMotd(String server, String motd) {
-        ServerInfo info = servers.get(server);
-        if (info == null || info.getMotd().equals(motd)) return;
-        info.setMotd(motd);
-
-        ByteArrayDataOutput out = ByteStreams.newDataOutput();
-        out.writeUTF("MOTD");
-        out.writeUTF(server);
-        out.writeUTF(motd);
-        getProxy().getServers().forEach((target,info0)->info0.sendData(CHANNEL,out.toByteArray()));
-
+    protected fun loadServer(server: net.md_5.bungee.api.config.ServerInfo) {
+        val out = ByteStreams.newDataOutput()
+        out.writeUTF("Load")
+        out.writeUTF(server.name)
+        servers.forEach { (target: String, info: ServerInfo) ->
+            out.writeUTF(
+                target + "|" + info.status + "|" + info.motd + "|" + java.lang.String.join(
+                    ",",
+                    info.players
+                )
+            )
+        }
+        out.writeUTF("End")
+        val loaded = server.sendData(CHANNEL, out.toByteArray(), false)
+        if (loaded) loadedServers.add(server.name)
     }
 
+    fun updatePlayers(server: net.md_5.bungee.api.config.ServerInfo?) {
+        if (server == null) return
+
+        if (server.players.isNotEmpty() && !loadedServers.contains(server.name)) updateStatus(server.name, true)
+
+        val info = servers[server.name]
+        info!!.players = playersGetNames(server.players)
+
+        val out = ByteStreams.newDataOutput()
+        out.writeUTF("Players")
+        out.writeUTF(info.name)
+        out.writeUTF(java.lang.String.join(",", info.players))
+        proxy.servers.forEach { (target: String?, info0: net.md_5.bungee.api.config.ServerInfo) ->
+            info0.sendData(
+                CHANNEL,
+                out.toByteArray()
+            )
+        }
+    }
+
+    private fun updateStatus(server: String, status: Boolean) {
+        if (status) loadServer(proxy.getServerInfo(server))
+        else loadedServers.remove(server)
+
+        val info = servers[server]
+        if (info!!.status == status) return
+        info.status = status
+
+        val out = ByteStreams.newDataOutput()
+        out.writeUTF("Status")
+        out.writeUTF(server)
+        out.writeBoolean(status)
+        proxy.servers.forEach { (target: String?, info0: net.md_5.bungee.api.config.ServerInfo) ->
+            info0.sendData(
+                CHANNEL,
+                out.toByteArray()
+            )
+        }
+    }
+
+    private fun updateMotd(server: String, motd: String) {
+        val info = servers[server]
+        if (info == null || info.motd == motd) return
+        info.motd = motd
+
+        val out = ByteStreams.newDataOutput()
+        out.writeUTF("MOTD")
+        out.writeUTF(server)
+        out.writeUTF(motd)
+        proxy.servers.forEach { (target: String?, info0: net.md_5.bungee.api.config.ServerInfo) ->
+            info0.sendData(
+                CHANNEL,
+                out.toByteArray()
+            )
+        }
+    }
 }

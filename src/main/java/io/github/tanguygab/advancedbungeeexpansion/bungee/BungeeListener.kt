@@ -1,20 +1,18 @@
-package io.github.tanguygab.advancedbungeeexpansion.bungee;
+package io.github.tanguygab.advancedbungeeexpansion.bungee
 
-import net.md_5.bungee.api.event.ServerDisconnectEvent;
-import net.md_5.bungee.api.event.ServerSwitchEvent;
-import net.md_5.bungee.api.plugin.Listener;
-import net.md_5.bungee.event.EventHandler;
+import net.md_5.bungee.api.event.ServerDisconnectEvent
+import net.md_5.bungee.api.event.ServerSwitchEvent
+import net.md_5.bungee.api.plugin.Listener
+import net.md_5.bungee.event.EventHandler
 
-public record BungeeListener(AdvancedBungeeExpansionBridge plugin) implements Listener {
-
+class BungeeListener(private val plugin: AdvancedBungeeExpansionBridge) : Listener {
     @EventHandler
-    public void on(ServerSwitchEvent e) {
-        plugin.updatePlayers(e.getPlayer().getServer().getInfo());
+    fun on(e: ServerSwitchEvent) {
+        plugin.updatePlayers(e.player.server.info)
     }
 
     @EventHandler
-    public void on(ServerDisconnectEvent e) {
-        plugin.updatePlayers(e.getTarget());
+    fun on(e: ServerDisconnectEvent) {
+        plugin.updatePlayers(e.target)
     }
-
 }

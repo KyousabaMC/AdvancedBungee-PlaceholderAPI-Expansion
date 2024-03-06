@@ -2,4 +2,4 @@ name: "AdvancedBungeeExpansionBridge"
 version: '${version}'
 main: io.github.tanguygab.advancedbungeeexpansion.bungee.AdvancedBungeeExpansionBridge
 description: Bridge forwarding server status to Spigot servers
-author: Tanguygab
+author: KyousabaMC

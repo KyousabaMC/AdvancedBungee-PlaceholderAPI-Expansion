@@ -1,53 +1,58 @@
-package io.github.tanguygab.advancedbungeeexpansion.spigot;
+package io.github.tanguygab.advancedbungeeexpansion.spigot
 
-import com.google.common.io.ByteArrayDataInput;
-import com.google.common.io.ByteStreams;
-import io.github.tanguygab.advancedbungeeexpansion.ServerInfo;
-import org.bukkit.entity.Player;
-import org.bukkit.plugin.messaging.PluginMessageListener;
+import com.google.common.io.ByteStreams
+import io.github.tanguygab.advancedbungeeexpansion.ServerInfo
+import org.bukkit.Bukkit
+import org.bukkit.entity.Player
+import org.bukkit.plugin.messaging.PluginMessageListener
+import java.util.List
+import javax.annotation.Nonnull
 
-import javax.annotation.Nonnull;
-import java.util.List;
-
-public record SpigotListener(AdvancedBungeeExpansion expansion) implements PluginMessageListener {
-
-    @Override
-    @SuppressWarnings("UnstableApiUsage")
-    public void onPluginMessageReceived(@Nonnull String channel, @Nonnull Player player, @Nonnull byte[] message) {
-        if (!expansion.CHANNEL.equals(channel)) return;
-        ByteArrayDataInput in = ByteStreams.newDataInput(message);
-        String subChannel = in.readUTF();
-        switch (subChannel) {
-            case "Load" -> {
-                String currentServer = in.readUTF();
+class SpigotListener(private val expansion: AdvancedBungeeExpansion) : PluginMessageListener {
+    override fun onPluginMessageReceived(
+        @Nonnull channel: String,
+        @Nonnull player: Player,
+        @Nonnull message: ByteArray
+    ) {
+        if (expansion.CHANNEL != channel) return
+        val `in` = ByteStreams.newDataInput(message)
+        val subChannel = `in`.readUTF()
+        when (subChannel) {
+            "Load" -> {
+                val currentServer = `in`.readUTF()
                 while (true) {
-                    String line = in.readUTF();
-                    if (line.equals("End")) break;
-                    String[] args = line.split("\\|");
-                    String server = args[0];
-                    boolean status = Boolean.parseBoolean(args[1]);
-                    String motd = args[2];
-                    List<String> players = args.length > 3 ? List.of(args[3].split(",")) : List.of();
-                    expansion.servers.put(server,new ServerInfo(server,status,motd,players));
+                    val line = `in`.readUTF()
+                    if (line == "End") break
+                    val args = line.split("\\|".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
+                    val server = args[0]
+                    val status = args[1].toBoolean()
+                    val motd = args[2]
+                    val players = if (args.size > 3) List.of(*args[3].split(",".toRegex()).dropLastWhile { it.isEmpty() }
+                            .toTypedArray()) else listOf()
+                    expansion.servers[server] = ServerInfo(server, status, motd, players)
                 }
-                expansion.currentServer = expansion.servers.get(currentServer);
-                expansion.loaded = true;
+                expansion.currentServer = expansion.servers[currentServer]
+                expansion.loaded = true
             }
-            case "Unload" -> expansion.loaded = false;
-            case "Players" -> {
-                ServerInfo info = expansion.servers.get(in.readUTF());
-                if (info == null) return;
-                info.setPlayers(List.of(in.readUTF().split(",")));
+
+            "Unload" -> {
+                expansion.loaded = false
             }
-            case "Status" -> {
-                ServerInfo info = expansion.servers.get(in.readUTF());
-                if (info != null) info.setStatus(in.readBoolean());
+            "Players" -> {
+                val info = expansion.servers[`in`.readUTF()] ?: return
+                info.players = List.of(*`in`.readUTF().split(",".toRegex()).dropLastWhile { it.isEmpty() }
+                    .toTypedArray())
             }
-            case "MOTD" -> {
-                ServerInfo info = expansion.servers.get(in.readUTF());
-                if (info != null) info.setMotd(in.readUTF());
+
+            "Status" -> {
+                val info = expansion.servers[`in`.readUTF()]
+                if (info != null) info.status = `in`.readBoolean()
+            }
+
+            "MOTD" -> {
+                val info = expansion.servers[`in`.readUTF()]
+                if (info != null) info.motd = `in`.readUTF()
             }
         }
-
     }
 }

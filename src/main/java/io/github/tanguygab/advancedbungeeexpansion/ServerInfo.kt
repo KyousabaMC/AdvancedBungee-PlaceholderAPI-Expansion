@@ -1,24 +1,32 @@
-package io.github.tanguygab.advancedbungeeexpansion;
+package io.github.tanguygab.advancedbungeeexpansion
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.AllArgsConstructor
+import lombok.Getter
+import lombok.Setter
 
-import java.util.List;
-
+@Getter
 @AllArgsConstructor
-public class ServerInfo {
+class ServerInfo {
+    var name: String = ""
+    var status = false
+    var motd: String? = null
+    var players: List<String>? = null
 
-    @Getter private final String name;
-    @Getter @Setter private boolean status;
-    @Getter @Setter private String motd;
-    @Getter @Setter private List<String> players;
-
-    public ServerInfo(String name, List<String> players) {
-        this(name,false,"No MOTD",players);
+    constructor(name: String, status: Boolean, motd: String, players: List<String>) {
+        this.name = name
+        this.status = status
+        this.motd = motd
+        this.players = players
     }
 
-    public int getPlayerCount() {
-        return players.size();
+    constructor(name: String, players: List<String>) {
+        this.name = name ?: ""
+        this.status = false
+        this.motd = "No MOTD"
+        this.players = players
+
     }
+
+    val playerCount: Int
+        get() = players!!.size
 }
