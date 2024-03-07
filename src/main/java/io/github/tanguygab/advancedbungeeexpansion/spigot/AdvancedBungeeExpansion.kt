@@ -43,7 +43,7 @@ class AdvancedBungeeExpansion : PlaceholderExpansion(), Taskable {
     }
 
     override fun onRequest(player: OfflinePlayer, @Nonnull params: String): String? {
-        if (!loaded) return "Loading data..."
+        if (!loaded) return "ロード中..."
 
         val args = params.split("_".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
         val serverArgs = args[0].split(":".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
