@@ -43,7 +43,6 @@ class AdvancedBungeeExpansion : PlaceholderExpansion(), Taskable {
     }
 
     override fun onRequest(player: OfflinePlayer, @Nonnull params: String): String? {
-        Bukkit.getLogger().info("test")
         if (!loaded) return "Loading data..."
 
         val args = params.split("_".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
@@ -51,8 +50,6 @@ class AdvancedBungeeExpansion : PlaceholderExpansion(), Taskable {
         val category = serverArgs[0]
         val serverName = if (serverArgs.size > 1) serverArgs[1] else null
         val result = if (args.size > 1) args[1] else "name"
-
-        Bukkit.getLogger().info(category)
 
         return when (category) {
             "servers" -> when (result) {

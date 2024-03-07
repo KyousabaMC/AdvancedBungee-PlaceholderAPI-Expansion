@@ -5,8 +5,8 @@ plugins {
     id "org.jetbrains.kotlin.kapt" version "1.9.22"
 }
 
-group = 'io.github.tanguygab'
-version = '1.0.2'
+group = 'net.kyousaba'
+version = '1.0.3'
 
 repositories {
     mavenCentral()

@@ -2,10 +2,8 @@ package io.github.tanguygab.advancedbungeeexpansion.spigot
 
 import com.google.common.io.ByteStreams
 import io.github.tanguygab.advancedbungeeexpansion.ServerInfo
-import org.bukkit.Bukkit
 import org.bukkit.entity.Player
 import org.bukkit.plugin.messaging.PluginMessageListener
-import java.util.List
 import javax.annotation.Nonnull
 
 class SpigotListener(private val expansion: AdvancedBungeeExpansion) : PluginMessageListener {
@@ -27,7 +25,7 @@ class SpigotListener(private val expansion: AdvancedBungeeExpansion) : PluginMes
                     val server = args[0]
                     val status = args[1].toBoolean()
                     val motd = args[2]
-                    val players = if (args.size > 3) List.of(*args[3].split(",".toRegex()).dropLastWhile { it.isEmpty() }
+                    val players = if (args.size > 3) listOf(*args[3].split(",".toRegex()).dropLastWhile { it.isEmpty() }
                             .toTypedArray()) else listOf()
                     expansion.servers[server] = ServerInfo(server, status, motd, players)
                 }
@@ -40,7 +38,7 @@ class SpigotListener(private val expansion: AdvancedBungeeExpansion) : PluginMes
             }
             "Players" -> {
                 val info = expansion.servers[`in`.readUTF()] ?: return
-                info.players = List.of(*`in`.readUTF().split(",".toRegex()).dropLastWhile { it.isEmpty() }
+                info.players = listOf(*`in`.readUTF().split(",".toRegex()).dropLastWhile { it.isEmpty() }
                     .toTypedArray())
             }
 
