@@ -77,13 +77,13 @@ class AdvancedBungeeExpansion : PlaceholderExpansion(), Taskable {
     }
 
     private fun getServerInfo(server: ServerInfo?, result: String): String {
-        if (server == null) return "Unknown server"
+        if (server == null) return "不明"
         return when (result) {
             "playercount" -> server.playerCount.toString()
             "players" -> java.lang.String.join(", ", server.players)
             "status" -> ChatColor.COLOR_CHAR.toString() + (if (server.status) "aオンライン" else "cオフライン")
             "motd" -> server.motd ?: ""
-            else -> server.name ?: ""
+            else -> server.name
         }
     }
 }
